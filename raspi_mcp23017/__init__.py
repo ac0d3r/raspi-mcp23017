@@ -5,6 +5,20 @@ from enum import Enum
 from typing import Tuple, List, Iterator
 
 
+def set_bit_value(origin, bit, value) -> int:
+    """改变 origin 中 bit 位置的值位 value 其他位保持不变
+    Args:
+        origin: 8 bit value
+        bit: origin 中的位置
+        value: 0, 1
+    """
+    if value == 0:
+        origin &= 0b11111110 << bit
+    elif value == 1:
+        origin |= 0b00000001 << bit
+    return origin
+
+
 class PinRowType(object):
     A = 0
     B = 1
@@ -75,21 +89,23 @@ class Pin(object):
     def value(self, value: int):
         self.setValue(value)
 
+    def on(self):
+        self.value = 1
+
+    def off(self):
+        self.value = 0
+
     def setValue(self, value: int):
-        origin_value = self.allValues()
-        if value == 0:
-            origin_value &= 0b11111110 << self.pin
-        else:
-            origin_value |= 0b00000001 << self.pin
+        _value = set_bit_value(self.allGPIOValues(), self.pin, value)
         self.__bus.write_byte_data(
             self.genMode(MCP23017Mode.GPIO),
-            origin_value)
+            _value)
 
     def readValue(self) -> int:
         """
         Return: 0,1
         """
-        allval = self.allValues()
+        allval = self.allGPIOValues()
         if (allval & 0b00000001 << self.pin) > 0:
             return 1
         else:
@@ -99,28 +115,31 @@ class Pin(object):
         mode = self.genMode(MCP23017Mode.IODIR)
         origin_value = self.__bus.read_byte_data(mode)
         if out:
-            origin_value &= 0b11111110 << self.pin
+            origin_value = set_bit_value(origin_value, self.pin, value=0)
         else:
-            origin_value |= 0b00000001 << self.pin
+            origin_value = set_bit_value(origin_value, self.pin, value=1)
         self.__bus.write_byte_data(mode, origin_value)
 
     def setOutput(self):
         self.setInOutPut(out=True)
 
-    def setIutput(self, pull=False):
+    def setInput(self, pull=False):
         self.setInOutPut(out=False)
         if pull:
             mode = self.genMode(MCP23017Mode.GPPU)
-            origin_value = self.__bus.read_byte_data(mode)
-            origin_value |= 0b00000001 << self.pin
-            self.__bus.write_byte_data(mode, origin_value)
+            self.__bus.write_byte_data(
+                mode,
+                set_bit_value(
+                    self.__bus.read_byte_data(mode),
+                    self.pin,
+                    value=1))
 
     def genMode(self, mode: MCP23017Mode) -> int:
         if self.row == PinRowType.B:
             mode += 1
         return mode
 
-    def allValues(self):
+    def allGPIOValues(self):
         mode = self.genMode(MCP23017Mode.GPIO)
         return self.__bus.read_byte_data(mode)
 
