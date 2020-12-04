@@ -109,6 +109,11 @@ class Pin(object):
 
     def setIutput(self, pull=False):
         self.setInOutPut(out=False)
+        if pull:
+            mode = self.genMode(MCP23017Mode.GPPU)
+            origin_value = self.__bus.read_byte_data(mode)
+            origin_value |= 0b00000001 << self.pin
+            self.__bus.write_byte_data(mode, origin_value)
 
     def genMode(self, mode: MCP23017Mode) -> int:
         if self.row == PinRowType.B:
