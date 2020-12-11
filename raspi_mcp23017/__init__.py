@@ -6,7 +6,7 @@ from typing import Tuple, List, Iterator
 
 
 def set_bit_value(origin, bit, value) -> int:
-    """改变 origin 中 bit 位置的值位 value 其他位保持不变
+    """改变 origin 中 bit 位置的值为 value，其他位保持不变
     Args:
         origin: 8 bit value
         bit: origin 中的位置
@@ -199,6 +199,9 @@ class MCP23017(object):
                 else:
                     self.B.append(i)
 
-    def __del__(self):
+    def close(self):
         self.reset()
         self.bus.close()
+
+    def __del__(self):
+        self.close()
