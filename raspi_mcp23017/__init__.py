@@ -202,6 +202,8 @@ class MCP23017(object):
     def close(self):
         self.reset()
         self.bus.close()
+        self.bus = None
 
     def __del__(self):
-        self.close()
+        if self.bus:
+            self.close()
