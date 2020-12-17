@@ -13,7 +13,7 @@ def set_bit_value(origin, bit, value) -> int:
         value: 0, 1
     """
     if value == 0:
-        origin &= 0b11111110 << bit
+        origin &= ~(0b00000001 << bit)
     elif value == 1:
         origin |= 0b00000001 << bit
     return origin
